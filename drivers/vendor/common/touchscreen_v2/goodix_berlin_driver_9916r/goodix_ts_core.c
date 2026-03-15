@@ -830,6 +830,33 @@ static ssize_t goodix_ts_rotation_store(struct device *dev,
 	return count;
 }
 
+static ssize_t goodix_ts_rate_boost_store(struct device *dev,
+					 struct device_attribute *attr,
+					 const char *buf, size_t count)
+{
+	struct goodix_ts_core *cd = dev_get_drvdata(dev);
+	struct goodix_ts_hw_ops *hw_ops = cd->hw_ops;
+	int val, freq, ret;
+
+	if (!buf || count <= 0)
+		return -EINVAL;
+
+	if (kstrtoint(buf, 10, &val))
+		return -EINVAL;
+
+	if (val > 1 || val < 0)
+		return -ERANGE;
+
+	freq = val ? TP_FREQ_HIGH : TP_FREQ_DEFAULT;
+	ret = hw_ops->set_tp_report_rate(cd, freq);
+	if (ret)
+		return ret;
+
+	ts_info("set rate to level %d", freq);
+
+	return count;
+}
+
 static DEVICE_ATTR(driver_info, 0440,
 		driver_info_show, NULL);
 static DEVICE_ATTR(chip_info, 0440,
@@ -852,6 +879,8 @@ static DEVICE_ATTR(die_info, 0440,
 		die_info_show, NULL);
 static DEVICE_ATTR(rotation, 0220,
 		NULL, goodix_ts_rotation_store);
+static DEVICE_ATTR(rate_boost, 0664,
+		NULL, goodix_ts_rate_boost_store);
 
 static struct attribute *sysfs_attrs[] = {
 	&dev_attr_driver_info.attr,
@@ -865,6 +894,7 @@ static struct attribute *sysfs_attrs[] = {
 	&dev_attr_debug_log.attr,
 	&dev_attr_die_info.attr,
 	&dev_attr_rotation.attr,
+	&dev_attr_rate_boost.attr,
 	NULL,
 };
 
@@ -2030,6 +2060,8 @@ out:
 	if (core_data->charger_status)
 		core_data->hw_ops->set_enter_charger(core_data);
 #endif
+
+	hw_ops->set_tp_report_rate(core_data, core_data->report_rate);
 
 	ts_info("Resume end");
 	return 0;

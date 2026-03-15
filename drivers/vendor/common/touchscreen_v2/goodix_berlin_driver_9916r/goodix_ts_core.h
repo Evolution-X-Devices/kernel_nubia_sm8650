@@ -374,6 +374,12 @@ enum touch_point_status {
 	TS_RELEASE,
 	TS_TOUCH,
 };
+
+enum zte_tp_freq {
+	TP_FREQ_DEFAULT = 1, /* 240hz */
+	TP_FREQ_HIGH = 4, /* 960hz */
+};
+
 /* coordinate package */
 struct goodix_ts_coords {
 	int status; /* NONE, RELEASE, TOUCH */
@@ -467,6 +473,7 @@ struct goodix_ts_hw_ops {
 	int (*get_capacitance_data)(struct goodix_ts_core *cd,
 			struct ts_rawdata_info *info);
 	int (*set_display_rotation)(struct goodix_ts_core *cd, int rotation);
+	int (*set_tp_report_rate)(struct goodix_ts_core *cd, int mode);
 #ifdef GOODIX_USB_DETECT_GLOBAL
 	int (*set_enter_charger)(struct goodix_ts_core *cd);
 	int (*set_leave_charger)(struct goodix_ts_core *cd);
@@ -531,6 +538,8 @@ struct goodix_ts_core {
 	struct notifier_block ts_notifier;
 	struct goodix_ts_esd ts_esd;
 	bool esd_initialized;
+
+	int report_rate;
 
 #ifdef GOODIX_USB_DETECT_GLOBAL
 	bool charger_status;
